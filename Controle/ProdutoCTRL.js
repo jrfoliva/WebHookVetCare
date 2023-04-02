@@ -167,8 +167,14 @@ export default class ProdutoCTRL {
     async processarIntents(requisicao, resposta) {
         const payload = requisicao.body;
         const intencao = payload['queryResult']['intent']
+        
+        //atentar-se quanto a sessão devido a concorrência entre conversas.
+        let listaProdutos = [];
+        let listaQtds = [];
+
+
         if (intencao) {
-            if (intencao['displayName'] === 'VendaProdutos - yes') {
+            if (intencao['displayName'] === 'ApresentaProdutos') {
                 const source = payload["originalDetectIntentRequest"]["source"];
                 // resp é a estrutura da resposta
                 let resp = { fulfillmentMessages: [] };
@@ -191,8 +197,34 @@ export default class ProdutoCTRL {
                     resp['fulfillmentMessages'][0]['payload']['richContent'].push(produtosCards); 
                 }
                 return resposta.json(resp);
+            } 
+            else if (intencao['displayName'] === 'Pedido') {
+                if (payload['queryResult']['action'] === 'ParametrosDoPedido') {
+
+                    // DialogFlow envia-nos as entidades (qtds e produtos)
+                    listaQtds     = payload['queryResult']['parameters']['qtds']; 
+                    listaProdutos = payload['queryResult']['parameters']['produtos'];
+                    
+                    let strPedido = '';
+                    for (let i=0; i< listaProdutos.length; i++){
+                        strPedido += listaQtds[i] + ' unidade(s) de '+ listaProdutos[i]+ ', ';
+                    }
+                    
+                    let resp = { "fulfillmentMessages": [] };
+                    resp['fulfillmentMessages'].push({
+                        "text" : {
+                            "text": [
+                                `Perfeito, aqui está o seu pedido ${strPedido} confirma o pedido?`
+                            ]
+                        }
+                    });
+                    return resposta.json(resp);
+                }
             }
+            else if (intencao['displayName'] === 'Pedido - yes') {
+                
+            }
+            
         }
     }
-
 }

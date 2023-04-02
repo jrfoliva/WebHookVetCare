@@ -8,6 +8,7 @@ import cors from "cors";
 import rotaDlgFlow from "./Rotas/RotaDlgFlow.js";
 import rotaProdutos from "./Rotas/RotaProdutos.js";
 import rotaClientes from "./Rotas/RotaClientes.js";
+import rotaVendas from "./Rotas/RotaVendas.js";
 
 const host = "0.0.0.0";
 const port = 5001;
@@ -25,6 +26,7 @@ app.use(express.json());
 app.use('/webhook', rotaDlgFlow);
 app.use('/produtos', rotaProdutos);
 app.use('/clientes', rotaClientes);
+app.use('/vendas', rotaVendas);
 
 app.listen(port, host, () => {
     console.log(`WebHook-VetCare em execução na porta: ${port}`);
