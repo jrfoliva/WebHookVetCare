@@ -21,7 +21,6 @@ export default class VendaCTRL {
 
             if (clicodigo && data && vlrVenda && formaPgto && listaItensVenda.length > 0) {
                 const cabVenda = new Venda(0, clicodigo, data, vlrVenda, formaPgto, numParcelas, diasIntervalo);
-                //doc = cabVenda.proxcab_vendoc().then(() => {
                 cabVenda.gravar(cabVenda).then((doc) => { // retorna o insertId (cab_numdoc)
                     for (const produto of listaItensVenda) {
                         const item = new ItensVenda(doc, produto.codigo, produto.qtd, produto.vlrUnit);
@@ -36,7 +35,7 @@ export default class VendaCTRL {
                     }
                     resposta.json({
                         status: true,
-                        mensagem: "Cabeçalho e itens da venda gravados com sucesso!"
+                        mensagem: "Venda registrada sob o número: " + doc
                     });
                 }).catch((erro) => {
                     resposta.json({
@@ -44,12 +43,6 @@ export default class VendaCTRL {
                         mensagem: "Não foi possível gravar o cabeçalho da venda." + erro.message
                     });
                 });
-                // }).catch((erro) => {
-                //     resposta.json({
-                //         status: false,
-                //         mensagem: "Não foi possível recuperar o próximo número de documento" + erro.message
-                //     });
-                // });
 
             }
             else { //Faltam dados
@@ -82,12 +75,21 @@ export default class VendaCTRL {
             const diasIntervalo = dados.diasIntervalo;
             const listaItensVenda = dados.listaItensVenda;
 
-            if (clicodigo && data && vlrVenda && formaPgto && listaItensVenda.length > 0) {
+            if (doc && clicodigo && data && vlrVenda && formaPgto && listaItensVenda.length > 0) {
                 const cabVenda = new Venda(doc, clicodigo, data, vlrVenda, formaPgto, numParcelas, diasIntervalo);
-                produto.atualizar(cabVenda).then(() => {
+                cabVenda.atualizar(cabVenda).then(() => {
+                    const excluirItens = new ItensVenda(doc);
+                    excluirItens.excluir(excluirItens).then(() => {
+
+                    }).catch((erro) => {
+                        resposta.json({
+                            status: false,
+                            mensagem: "Falha ao excluir os itens da venda: " +erro.message 
+                        });
+                    })
                     for (item of listaItensVenda) {
                         const item = new ItensVenda(doc, item.codigo, item.qtd, item.vlrUnit);
-                        item.atualizar(item).then(() => {
+                        item.gravar(item).then(() => {
 
                         }).catch((erro) => {
                             resposta.json({
@@ -96,6 +98,10 @@ export default class VendaCTRL {
                             });
                         });
                     }
+                    resposta.json({
+                        status: true,
+                        mensagem: "Pedido gerado com suscesso sob o número: " + doc
+                    });
                 }).catch((erro) => { //funções de callback
                     resposta.json({
                         status: false,
@@ -126,29 +132,29 @@ export default class VendaCTRL {
         //no cabeçalho da requisição a propriedade Content-Type: application/json
         if (requisicao.method === "DELETE" && requisicao.is("application/json")) {
             const dados = requisicao.body;
-            //const doc = dados.doc;
-            const doc = requisicao.params['doc'];
+            const doc = dados.doc;
+            //const doc = requisicao.params['doc'];
             if (doc) {
-                const cabVenda = new Venda(codigo);
-                cabVenda.excluir(cabVenda).then(() => {
-                    resposta.json({
-                        status: true,
-                        mensagem: "Cabeçalho da venda excluído com sucesso!"
-                    });
-                    const item = new ItensVenda(doc);
-                    item.excluir(item).then(() => {
+                const cabVenda = new Venda(doc);
+                const itensVenda = new ItensVenda(doc);
+                itensVenda.excluir(itensVenda).then(() => {
+                    
+                    cabVenda.excluir(cabVenda).then(() => {
 
                     }).catch((erro) => {
                         resposta.json({
                             status: false,
-                            mensagem: "Não foi possível excluir um item da venda." + erro.message
+                            mensagem: "Falha ao excluir o cabeçalho da venda: " + erro.message
                         });
-
+                    })
+                    resposta.json({
+                        status: true,
+                        mensagem: "Cabeçalho e Itens da venda excluídos com sucesso!"
                     });
-                }).catch((erro) => { //funções de callback
+                }).catch((erro) => {
                     resposta.json({
                         status: false,
-                        mensagem: "Não foi possível excluir venda: " + erro.message
+                        mensagem: "Falha ao excluir itens da venda: " + erro.message
                     });
                 });
             }
@@ -176,22 +182,27 @@ export default class VendaCTRL {
         const doc = requisicao.params['doc'];
         if (requisicao.method === "GET") {
             const cabVenda = new Venda(doc);
-            cabVenda.consultar(doc).then((cabecalho) => {
+            cabVenda.consultar(doc).then((listaVendas) => {
                 const itensVenda = new ItensVenda(doc);
                 itensVenda.consultar(doc).then((listaItens) => {
                     resposta.json({
-                        cabecalho: cabecalho,
+                        cabecalho: listaVendas,
                         listaItens: listaItens,
                         status: true,
-                        mensagem: "Cabeção e itens da venda recuperados com sucesso!"
+                        mensagem: "Cabeçalho e itens da venda recuperados com sucesso!"
+                    });
+                }).catch((erro) => {
+                    resposta.json({
+                        status: false,
+                        mensagem: "Falha ao recuperar itens da venda." + erro.message
                     });
                 });
             }).catch((erro) => {
                 resposta.json({
                     status: "false",
-                    mensagem: "Falha ao obter o cabeçalho ou itens da venda: " + erro.message
+                    mensagem: "Falha ao obter o cabeçalho da venda: " + erro.message
                 });
-            })
+            });
 
         } else {
             resposta.json({

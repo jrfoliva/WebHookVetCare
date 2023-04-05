@@ -42,7 +42,7 @@ class VendaDAO {
     async consultar(doc=0) {
         const conexao = await Conectar();
         let sql = '';
-        if (doc=0){
+        if (doc === 0){
             sql = "SELECT * FROM CABECALHO_VENDA WHERE cab_vendoc > ?";
         } else {
             sql = "SELECT * FROM CABECALHO_VENDA WHERE cab_vendoc = ?";

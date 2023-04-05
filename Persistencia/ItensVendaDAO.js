@@ -15,11 +15,13 @@ class ItensVendaDAO {
     }
 
     async alterar(itensVenda) {
+        /* Método que altera somente os itens de uma venda.*/ 
         if (itensVenda instanceof ItensVenda) {
             const conexao = await Conectar();
             const sql = " UPDATE ITENS_VENDA set procodigo=?, ite_venqtd=?, ite_venvlrunit=? \
-                                 WHERE cab_vendoc = ?";
-            const valores = [itensVenda.procodigo, itensVenda.ite_venqtd, itensVenda.ite_venvlrunit, itensVenda.cab_vendoc];
+                                 WHERE cab_vendoc = ? and procodigo = ?";
+            const valores = [itensVenda.procodigo, itensVenda.ite_venqtd, itensVenda.ite_venvlrunit, itensVenda.cab_vendoc,
+                             itensVenda.procodigo];
             await conexao.query(sql, valores);
         }
     }
@@ -36,8 +38,8 @@ class ItensVendaDAO {
     async consultar(doc=0) {
         const conexao = await Conectar();
         let sql = '';
-        if (doc = 0) {
-            sql = "SELECT * FROM ITENS_VENDA WHERE cab_vendoc > ? Order by cab_vendata";    
+        if (doc===0) {
+            sql = "SELECT * FROM ITENS_VENDA WHERE cab_vendoc > ?";
         } else {
             sql = "SELECT * FROM ITENS_VENDA WHERE cab_vendoc = ?";
         }
@@ -45,7 +47,7 @@ class ItensVendaDAO {
         let listaItens = [];
         for(let row of rows) {
             const itensVenda = new ItensVenda(row['cab_vendoc'], row['procodigo'], row['ite_venqtd'], row['ite_venvlrunit']);
-            listaServicos.push(itensVenda);
+            listaItens.push(itensVenda);
         }
         return listaItens;
     }

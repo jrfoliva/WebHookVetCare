@@ -164,8 +164,8 @@ create table Contas (
 
 -- Relatório de vendas de produtos ordenado por margem de lucro, decrescente.
 create or replace view vw_vendasProdMargemLucro as
-select iv.procodigo, p.prodescricao, (sum(iv.ite_venqtd) * sum(iv.ite_venvlrunit)) as valor,
-       ((sum(iv.ite_venqtd) * p.procusto)  / sum(iv.ite_venvlrunit)) as margem
+select iv.procodigo, p.prodescricao, ((iv.ite_venqtd) * (iv.ite_venvlrunit)) as valor,
+       (((iv.ite_venqtd) * p.procusto)  / (iv.ite_venvlrunit)) as margem
 from itens_venda iv inner join produtos p on iv.procodigo = p.procodigo
 order by margem desc;
 
