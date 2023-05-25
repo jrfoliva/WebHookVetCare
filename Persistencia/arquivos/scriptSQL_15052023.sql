@@ -17,6 +17,7 @@ create table Funcionarios (
   funnascimento date not null,
   perfcodigo integer not null,
   funsenha varchar(8) not null,
+  funcrmv varchar(20),
   funcep varchar(8),
   funendereco varchar(70) not null,
   funcidade varchar(50) not null,
@@ -26,6 +27,8 @@ create table Funcionarios (
   constraint fk_funperf foreign key (perfcodigo) 
   references Perfis(perfcodigo)
 );
+
+alter table Funcionarios Add column funcrmv varchar(15); -- a pedido dor professor
 
 create table Fornecedores (
 	forcodigo integer auto_increment,
@@ -280,11 +283,29 @@ CREATE TABLE agendar_consulta (
   FOREIGN KEY (funcodigo) REFERENCES funcionarios (funcodigo)
 );
 
-CREATE TABLE consultasRealizadas (
+CREATE TABLE Consultas_Realizadas (
   idConsReal INT auto_increment, -- Adicionado este campo 
-  idAgendarConsultas INT not null,
-  prescMedicamentos VARCHAR(1000),
+  idAgendarConsultas INT,
+  funcodigo int not null,
   historico varchar(3000),
-  PRIMARY KEY (idConsReal, idAgendarConsultas),
-  FOREIGN KEY (idAgendarConsultas) REFERENCES Agendar_consulta (id)
+  FOREIGN KEY (idAgendarConsultas) REFERENCES Agendar_consulta (id),
+  FOREIGN KEY (funcodigo) references funcionarios (funcodigo),
+  PRIMARY KEY (idConsReal, funcodigo)
 );
+
+-- A pedido do professor, foi solicitado para incluir uma tabela que tenha relacionamento com consultas. Pois, pode 
+-- haver aplicação de medicamentos, curativos, vacinas entre outros. 15/05/2023
+CREATE TABLE ITENS_USO_CONSULTA (
+  idConsReal int not null,
+  procodigo int not null,
+  iteCon_qtd numeric(4,3),
+  foreign key (idConsReal) references consultas_realizadas (idConsReal),
+  foreign key (procodigo) references produtos (procodigo),
+  primary key (idConsReal, procodigo)
+);
+
+
+-- INSERTS
+INSERT INTO `vetcare`.`perfis` (`perfcodigo`, `perfdescricao`) VALUES ('1', 'ADM');
+INSERT INTO `vetcare`.`perfis` (`perfcodigo`, `perfdescricao`) VALUES ('2', 'MÉDICO');
+INSERT INTO `vetcare`.`perfis` (`perfcodigo`, `perfdescricao`) VALUES ('3', 'COLABORADOR');

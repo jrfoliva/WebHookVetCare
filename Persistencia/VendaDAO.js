@@ -14,7 +14,6 @@ class VendaDAO {
                              venda.cab_vennumparcelas, venda.cab_vendiasinter];
             const [rows] = await conexao.query(sql, valores);
             return rows['insertId']
-
         }
     }
 

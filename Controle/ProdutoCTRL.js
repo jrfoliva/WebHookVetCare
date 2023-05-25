@@ -1,29 +1,31 @@
 import Produto from "../Modelo/Produto.js";
 // import ProdutoDAO from "../Persistencia/ProdutoDAO.js";
 import { obterCardsProdutos } from "../DialogFlow/funcoes.js";
+import Venda from "../Modelo/Venda.js";
 
 export default class ProdutoCTRL {
-    
+
     gravar(requisicao, resposta) {
         resposta.type('application/json');
         //resposta.headers('Content-Type','application/json');
         // no cabeçalho da requisição a propriedade Content-Type: application/json
         if (requisicao.method === "POST" && requisicao.is("application/json")) {
-            const dados      = requisicao.body;
-            const descricao  = dados.descricao;
-            const ean        = dados.ean;
-            const imagem     = dados.imagem;
-            const grupo      = dados.grupo;
-            const medida     = dados.medida;
-            const custo      = dados.custo;
-            const margem     = dados.margem;
-            const venda      = dados.venda;
-            const estoque    = dados.estoque;
+            const dados = requisicao.body;
+            const descricao = dados.descricao;
+            const ean = dados.ean;
+            const imagem = dados.imagem;
+            const grupo = dados.grupo;
+            const unmedida = dados.unmedida;
+            const custo = dados.custo;
+            const margem = dados.margem;
+            const venda = dados.venda;
+            const estoque = dados.estoque;
+            const lote = dados.lote;
             const vencimento = dados.vencimento;
-            const ativo      = dados.ativo;
-            
-            if (descricao && grupo && custo && margem && venda && ativo) {
-                const produto = new Produto(0,descricao,ean,imagem,grupo,medida,custo,margem,venda,estoque,vencimento,ativo);
+            const ativo = dados.ativo;
+
+            if (descricao && grupo && unmedida && custo && margem && venda && ativo) {
+                const produto = new Produto(0, descricao, ean, imagem, grupo, unmedida, custo, margem, venda, estoque, lote, vencimento, ativo);
                 produto.gravar(produto).then(() => {
                     resposta.json({
                         status: true,
@@ -56,21 +58,22 @@ export default class ProdutoCTRL {
         //resposta.headers('Content-Type','application/json');
         //no cabeçalho da requisição a propriedade Content-Type: application/json
         if (requisicao.method === "PUT" && requisicao.is("application/json")) {
-            const dados      = requisicao.body;
-            const codigo     = dados.codigo;   
-            const descricao  = dados.descricao;
-            const ean        = dados.ean;
-            const imagem     = dados.imagem;
-            const grupo      = dados.grupo;
-            const medida     = dados.medida;
-            const custo      = dados.custo;
-            const margem     = dados.margem;
-            const venda      = dados.venda;
-            const estoque    = dados.estoque;
+            const dados = requisicao.body;
+            const codigo = dados.codigo;
+            const descricao = dados.descricao;
+            const ean = dados.ean;
+            const imagem = dados.imagem;
+            const grupo = dados.grupo;
+            const unmedida = dados.unmedida;
+            const custo = dados.custo;
+            const margem = dados.margem;
+            const venda = dados.venda;
+            const estoque = dados.estoque;
+            const lote = dados.lote;
             const vencimento = dados.vencimento;
-            const ativo      = dados.ativo;
-            if (codigo && descricao && grupo && custo && margem && venda && ativo) {
-                const produto = new Produto(codigo,descricao,ean,imagem,grupo,medida,custo,margem,venda,estoque,vencimento,ativo);
+            const ativo = dados.ativo;
+            if (codigo && descricao && grupo && unmedida && custo && margem && venda && ativo) {
+                const produto = new Produto(codigo, descricao, ean, imagem, grupo, unmedida, custo, margem, venda, estoque, lote, vencimento, ativo);
                 produto.atualizar(produto).then(() => {
                     resposta.json({
                         status: true,
@@ -143,18 +146,18 @@ export default class ProdutoCTRL {
     consultar(requisicao, resposta) {
         //params armazena os parâmetros informados na url
         //          requisicao.params['codigo']
-        const ean = requisicao.params['ean'];
+        const valor = requisicao.params['valor'];
         if (requisicao.method === "GET") {
-            const produto = new Produto(0, '', ean);
-            produto.consultar(ean).then((listaProdutos) => {
+            const produto = new Produto();
+            produto.consultar(valor).then((listaProdutos) => {
                 resposta.json(listaProdutos);
             }).catch((erro) => {
                 resposta.json({
                     status: "false",
-                    mensagem: "Falha ao obter ao pesquisar produto: " + erro.message
+                    mensagem: "Falha ao pesquisar produto: " + erro.message
                 });
             });
-            
+
         } else {
             resposta.json({
                 status: false,
@@ -167,7 +170,7 @@ export default class ProdutoCTRL {
     async processarIntents(requisicao, resposta) {
         const payload = requisicao.body;
         const intencao = payload['queryResult']['intent']
-        
+
         //atentar-se quanto a sessão devido a concorrência entre conversas.
         let listaProdutos = [];
         let listaQtds = [];
@@ -190,31 +193,31 @@ export default class ProdutoCTRL {
                 } else { //ambiente de integração é DialogFlow Messenger
                     produtosCards = await obterCardsProdutos('messenger');
                     resp['fulfillmentMessages'].push({
-                       "payload": {
+                        "payload": {
                             "richContent": []
                         }
-                    });    
-                    resp['fulfillmentMessages'][0]['payload']['richContent'].push(produtosCards); 
+                    });
+                    resp['fulfillmentMessages'][0]['payload']['richContent'].push(produtosCards);
                 }
                 return resposta.json(resp);
-            } 
+            }
             else if (intencao['displayName'] === 'Pedido') {
                 if (payload['queryResult']['action'] === 'ParametrosDoPedido') {
 
                     // DialogFlow envia-nos as entidades (qtds e produtos)
-                    listaQtds     = payload['queryResult']['parameters']['qtds']; 
+                    listaQtds = payload['queryResult']['parameters']['qtds'];
                     listaProdutos = payload['queryResult']['parameters']['produtos'];
-                    
+
                     let strPedido = '';
-                    for (let i=0; i< listaProdutos.length; i++){
-                        strPedido += listaQtds[i] + ' unidade(s) de '+ listaProdutos[i]+ ', ';
+                    for (let i = 0; i < listaProdutos.length; i++) {
+                        strPedido += listaQtds[i] + ' unidade(s) de ' + listaProdutos[i] + ', ';
                     }
-                    
+
                     let resp = { "fulfillmentMessages": [] };
                     resp['fulfillmentMessages'].push({
-                        "text" : {
+                        "text": {
                             "text": [
-                                `Perfeito, aqui está o seu pedido ${strPedido} confirma o pedido?`
+                                `Perfeito, o seu pedido é : ${strPedido}. \nConfirma o pedido?`
                             ]
                         }
                     });
@@ -222,9 +225,23 @@ export default class ProdutoCTRL {
                 }
             }
             else if (intencao['displayName'] === 'Pedido - yes') {
-                
+                const cabVenda = new Venda(0,1,'2023-04-05',81.94, 1, 0, 0);
+                cabVenda.gravar(cabVenda).then((numPedido) => {
+                    if (numPedido) {
+                        let resp = { "fulfillmentMessages": [] };
+                        resp['fulfillmentMessages'].push({
+                            "text": {
+                                "text": [
+                                    "O numero do seu pedido é: " + numPedido + '. Informe o endereço para entrega!'
+                                ]
+                            }
+                        });
+                        resposta.json(resp);
+                    }
+                    
+                });
             }
-            
+
         }
     }
 }

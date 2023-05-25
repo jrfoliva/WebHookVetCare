@@ -4,7 +4,7 @@ const rotaProdutos = new Router();
 const produtoCTRL = new ProdutoCTRL();
 
 rotaProdutos
-.get("/:ean?", produtoCTRL.consultar)
+.get("/:valor?", produtoCTRL.consultar)
 .post('/', produtoCTRL.gravar)
 .put('/',produtoCTRL.atualizar)
 .delete('/',produtoCTRL.excluir);
